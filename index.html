@@ -160,6 +160,79 @@ textarea:focus { border-color: var(--accent); outline: none; }
 .prof b { color: var(--accent); }
 .err { color: var(--bad); font-weight: 600; margin-top: 10px; }
 .saved { font-size: 13px; color: var(--soft); text-align: center; margin-top: 10px; }
+
+/* меню встреч */
+.parts { display: flex; flex-direction: column; gap: 10px; margin: 8px 0 12px; }
+.partc { display: flex; align-items: center; gap: 14px; text-align: left; background: var(--paper); border: 1.5px solid var(--line); border-radius: 18px; padding: 16px; transition: border-color .15s, transform .15s; }
+.partc:not([disabled]):hover { border-color: var(--accent); }
+.partc[disabled] { opacity: .5; cursor: default; }
+.partc.done { border-color: color-mix(in srgb, var(--good) 45%, var(--line)); }
+.partc .pi { font-size: 30px; }
+.partc .pt { flex: 1; display: flex; flex-direction: column; }
+.partc .pt small { color: var(--soft); font-size: 14px; }
+.partc .pa { font-weight: 700; color: var(--accent); font-size: 14px; white-space: nowrap; }
+.link { background: none; border: 0; color: var(--soft); text-decoration: underline; font-size: 13px; }
+.hint { color: var(--soft); margin: -8px 0 14px; }
+.qtext.small { font-size: 18px; color: var(--soft); font-weight: 600; margin-bottom: 12px; }
+.qtext.portrait { font-size: clamp(20px, 5vw, 25px); font-weight: 600; background: var(--paper); border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+
+/* пара: два утверждения и 5 кружков (как у Gallup) */
+.bip { display: flex; flex-direction: column; gap: 14px; }
+.bip .side { background: var(--paper); border: 2px solid var(--line); border-radius: 18px; padding: 16px 16px 16px 14px; font-size: 18px; font-weight: 600; line-height: 1.35; display: flex; gap: 12px; align-items: center; }
+.bip .side.a { border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.bip .side.b { border-color: color-mix(in srgb, var(--warm) 45%, var(--line)); }
+.bip .lt { flex: none; width: 32px; height: 32px; border-radius: 10px; display: grid; place-items: center; font-weight: 800; color: #fff; }
+.bip .a .lt { background: var(--accent); } .bip .b .lt { background: var(--warm); }
+.dots { display: flex; justify-content: space-between; align-items: center; padding: 4px 6px; }
+.dot { width: var(--s); height: var(--s); border-radius: 50%; border: 3px solid var(--line); background: var(--paper); transition: transform .15s, background .15s; }
+.dot.d0, .dot.d1 { border-color: var(--accent); } .dot.d3, .dot.d4 { border-color: var(--warm); } .dot.d2 { border-color: var(--soft); }
+.dot:active { transform: scale(.9); }
+.dot[aria-pressed="true"].d0, .dot[aria-pressed="true"].d1 { background: var(--accent); }
+.dot[aria-pressed="true"].d3, .dot[aria-pressed="true"].d4 { background: var(--warm); }
+.dot[aria-pressed="true"].d2 { background: var(--soft); }
+.dot-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--soft); margin-top: -8px; padding: 0 4px; }
+
+/* шкала 0–10 */
+.scale { display: grid; grid-template-columns: repeat(11, 1fr); gap: 4px; }
+.sc { border: 1.5px solid var(--line); background: var(--paper); border-radius: 10px; padding: 12px 0; font-weight: 700; font-size: 15px; font-variant-numeric: tabular-nums; min-width: 0; }
+.sc:nth-child(-n+5) { color: color-mix(in srgb, var(--warm) 80%, var(--ink)); }
+.sc:nth-child(n+7) { color: color-mix(in srgb, var(--accent) 80%, var(--ink)); }
+.sc[aria-pressed="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.scale-ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--soft); margin-top: 6px; gap: 6px; }
+@media (max-width: 380px) { .sc { font-size: 13px; padding: 10px 0; border-radius: 8px; } .scale { gap: 3px; } }
+
+/* выбор-сеткой (метафоры) */
+.grid-opts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.gopt { background: var(--paper); border: 2px solid var(--line); border-radius: 16px; padding: 14px 12px; font-size: 16px; font-weight: 600; text-align: left; line-height: 1.3; min-height: 64px; transition: border-color .15s, background .15s; }
+.gopt[aria-pressed="true"] { border-color: var(--accent); background: var(--accent-soft); }
+
+/* карточки суперсил */
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+@media (min-width: 560px) { .cards { grid-template-columns: 1fr 1fr 1fr; } }
+.card-opt { display: flex; flex-direction: column; gap: 2px; padding: 12px; border-radius: 14px; }
+.card-opt .ci { font-size: 24px; }
+.card-opt small { font-weight: 400; font-size: 12.5px; opacity: .85; }
+.opt.skip { font-style: italic; }
+.sent { width: 100%; border: 1.5px solid var(--line); border-radius: 12px; padding: 12px; background: var(--chip); font-size: 16px; }
+.sent:focus { border-color: var(--accent); outline: none; }
+.q-sent .t { font-weight: 700; margin-bottom: 8px; }
+.cnt.err { color: var(--warm); font-weight: 700; }
+
+/* результаты */
+.card h3 { margin: 0 0 12px; }
+.res-grid + .card, .card + .card { margin-top: 12px; }
+.powers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pw { background: var(--accent-soft); border-radius: 14px; padding: 12px; display: flex; flex-direction: column; }
+.pw span { font-size: 26px; } .pw small { color: var(--soft); font-size: 13px; }
+.trait { margin-bottom: 12px; }
+.trait .tn { display: flex; justify-content: space-between; }
+.trait .tr { display: block; height: 10px; background: var(--chip); border-radius: 99px; overflow: hidden; border: 1px solid var(--line); margin: 4px 0; }
+.trait .tr i { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--warm)); border-radius: 99px; }
+.trait p { margin: 0; font-size: 15px; color: var(--soft); }
+.vals { margin: 0; padding-left: 22px; font-size: 18px; font-weight: 600; line-height: 1.7; }
+.letter p { font-size: 17px; line-height: 1.6; margin: 0 0 12px; }
+.letter .sign { text-align: right; color: var(--soft); font-style: italic; }
+.screen.quick { animation-duration: .2s; }
 </style>
 </head>
 <body>
@@ -167,6 +240,6 @@ textarea:focus { border-color: var(--accent); outline: none; }
 <div class="dock" id="dock"></div>
 <script src="config.js"></script>
 <script src="data.js"></script>
-<script src="app.js"></script>
+<script type="module" src="app.js"></script>
 </body>
 </html>
