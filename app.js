@@ -14,6 +14,7 @@ const QI = Object.fromEntries(ALLQ.map((q) => [q.id, q]));
 const fresh = () => ({ id: uuid(), student: "", answers: { _t: {} }, part: -1, block: 0, q: 0, intro: true, done: {}, view: "start", seconds: 0 });
 let S = load() || fresh();
 if (S.student && S.view === "start") S.view = "menu";
+if (D.renamed?.[S.student]) { S.student = D.renamed[S.student]; persist(); }
 let picked = "";
 let shownAt = performance.now();
 
@@ -378,4 +379,7 @@ function renderAll() {
 }
 
 addEventListener("pagehide", () => { if (S.student && S.view === "test") save(); });
+// при каждом открытии досылаем анкету: если последнее сохранение не дошло (сеть), сервер получит его сейчас;
+// сданную анкету mk_save всё равно не перезапишет
+if (S.student && answeredCount() > 0) save();
 render();
