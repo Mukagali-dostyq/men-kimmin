@@ -38,6 +38,8 @@ function isDone(q, v) {
   return v !== undefined && v !== null && v !== "";
 }
 const allDone = () => D.parts.every((p) => S.done[p.id]);
+// после обновления страницы сдавший все 3 встречи сразу видит все результаты
+if (S.student && allDone() && S.view !== "test") S.view = "all";
 const answeredCount = () => ALLQ.filter((q) => q.type !== "text" && isDone(q, S.answers[q.id])).length;
 const TOTALQ = ALLQ.filter((q) => q.type !== "text").length;
 const blocksDone = () => D.parts.reduce((n, p, pi) => n + (S.done[p.id] ? p.blocks.length : pi === S.part ? S.block : 0), 0);
@@ -81,6 +83,7 @@ function render() {
   if (S.view === "start") return renderStart();
   if (S.view === "menu") return renderMenu();
   if (S.view === "result") return renderResult(S.resultPart);
+  if (S.view === "all") return renderAll();
   const b = D.parts[S.part].blocks[S.block];
   if (S.intro) return renderIntro(b);
   return b.mode === "one" ? renderOne(b) : renderList(b);
@@ -127,7 +130,8 @@ function renderMenu() {
     else go(() => { if (S.part !== i) { S.part = i; S.block = 0; S.q = 0; S.intro = true; } S.view = "test"; });
   });
   on("other", () => go(() => { S = fresh(); picked = ""; }));
-  setDock(next === -1 ? "" : `<button class="btn wide" id="cont">${esc(D.parts[next].title)} →</button>`);
+  setDock(next === -1 ? `<button class="btn wide" id="all">Барлық нәтижелерім →</button>` : `<button class="btn wide" id="cont">${esc(D.parts[next].title)} →</button>`);
+  on("all", () => go(() => { S.view = "all"; }));
   on("cont", () => go(() => { if (S.part !== next) { S.part = next; S.block = 0; S.q = 0; S.intro = true; } S.view = "test"; }));
   if (saveErr) save().then((ok) => ok && render());
 }
@@ -308,8 +312,7 @@ function bars(rows) {
   return `<div class="bars">${rows.map((r) => `<div class="brow"><span class="ic">${r.icon || ""}</span><span class="nm">${esc(r.name)}</span>
     <span class="tr"><i style="width:${Math.max(3, Math.min(100, r.pct))}%"></i></span><span class="n">${esc(r.shown ?? "")}</span></div>`).join("")}</div>`;
 }
-function renderResult(pi) {
-  const sc = score(D, S.answers);
+function resultHtml(pi, sc) {
   const part = D.parts[pi];
   let html = "";
   if (part.id === "p1") {
@@ -346,6 +349,11 @@ function renderResult(pi) {
         <p class="sign">— Сынып жетекшің</p>
       </div>`;
   }
+  return html;
+}
+function renderResult(pi) {
+  const part = D.parts[pi];
+  const html = resultHtml(pi, score(D, S.answers));
   const next = D.parts.findIndex((p) => !S.done[p.id]);
   app.innerHTML = `<div class="screen"><p class="eyebrow" style="margin-top:14px">${esc(part.title)} ✓ · жауаптар жіберілді</p>${html}
     ${next !== -1 ? `<p class="saved">Келесі кездесу дайын. Қазір жалғастыра аласың немесе кейін — ертең де болады.</p>` : `<p class="saved">Бұл — бағыт қана, үкім емес.</p>`}</div>`;
@@ -354,6 +362,18 @@ function renderResult(pi) {
     : `<button class="btn ghost" id="menu">☰ Мәзір</button><button class="btn ghost" id="other">Келесі оқушы</button>`);
   on("menu", () => go(() => { S.view = "menu"; }));
   on("nx", () => go(() => { S.part = next; S.block = 0; S.q = 0; S.intro = true; S.view = "test"; }));
+  on("other", () => go(() => { S = fresh(); picked = ""; }));
+}
+
+function renderAll() {
+  const sc = score(D, S.answers);
+  app.innerHTML = `<div class="screen">
+    <p class="eyebrow" style="margin-top:14px">Үш кездесу де өтті ✓</p>
+    <h1>${esc(firstName())}, сенің нәтижелерің</h1>
+    ${D.parts.map((p, i) => `<h2 class="sec">${p.icon} ${esc(p.title)}</h2>${resultHtml(i, sc)}`).join("")}
+    <p class="saved">Бұл — бағыт қана, үкім емес.</p></div>`;
+  setDock(`<button class="btn ghost" id="menu">☰ Мәзір</button><button class="btn ghost" id="other">Келесі оқушы</button>`);
+  on("menu", () => go(() => { S.view = "menu"; }));
   on("other", () => go(() => { S = fresh(); picked = ""; }));
 }
 
