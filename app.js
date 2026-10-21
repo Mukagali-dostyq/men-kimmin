@@ -4,7 +4,7 @@
 // Ответы копятся в localStorage и уходят в базу (mk_save_iin) после каждого блока; анкету можно продолжить
 // с любого телефона. Сам ИИН на телефоне не хранится — только токен.
 // Тексты на двух языках: вопросы и результаты — data.js (MK_ALL.kk / MK_ALL.ru), надписи интерфейса — UI ниже.
-import { score } from "./scoring.js?v=ca496dbc";
+import { score } from "./scoring.js?v=2755f1a8";
 
 const ALL = window.MK_ALL;
 const CFG = window.MK_CONFIG || {};
@@ -26,7 +26,7 @@ const UI = {
     note: "Ойланба — бірінші сезгенің ең дұрыс жауап. Бетті жауып қойсаң, жауаптар сақталады — кейін кез келген телефоннан ЖСН-іңмен кіріп жалғастыра аласың.",
     iinTitle: "ЖСН-іңді жаз", iinLabel: "ЖСН, 12 сан",
     iinHint: "Жеке куәлігіңдегі 12 сан. Сенің атыңнан тек сен ғана кіре аласың. ЖСН телефонда сақталмайды, мұғалім де оны көрмейді.",
-    demo: "Демо — мұғалімге (жауаптар сақталмайды)", enter: "Кіру →", checking: "Тексерілуде…",
+    demo: "Демо — мұғалімге (жауаптар сақталмайды)", enter: "Кіру →", teacherEnter: "Мұғалім ретінде кіру →", checking: "Тексерілуде…",
     errTypo: "ЖСН қате терілген — сандарды тексеріп қайта жаз.",
     errNotFound: "Бұл ЖСН мектеп тізімінде жоқ. Сандарды тексер немесе сынып жетекшісіне айт.",
     errMany: "Қате әрекет тым көп. 15 минуттан кейін қайталап көр.",
@@ -60,7 +60,7 @@ const UI = {
     note: "Не раздумывай — первый ответ самый верный. Если закроешь страницу, ответы сохранятся — потом можно войти по ИИН с любого телефона и продолжить.",
     iinTitle: "Введи свой ИИН", iinLabel: "ИИН, 12 цифр",
     iinHint: "12 цифр из удостоверения личности. Под твоим именем можешь войти только ты. ИИН не сохраняется в телефоне, и учитель его не видит.",
-    demo: "Демо — для учителя (ответы не сохраняются)", enter: "Войти →", checking: "Проверяем…",
+    demo: "Демо — для учителя (ответы не сохраняются)", enter: "Войти →", teacherEnter: "Войти как учитель →", checking: "Проверяем…",
     errTypo: "ИИН набран с ошибкой — проверь цифры и введи ещё раз.",
     errNotFound: "Этого ИИН нет в списке школы. Проверь цифры или скажи классному руководителю.",
     errMany: "Слишком много неудачных попыток. Попробуй через 15 минут.",
@@ -265,14 +265,24 @@ function renderStart(msg = "") {
   </div>`;
   setDock(`<button class="btn wide" id="go" disabled>${u.enter}</button>`);
   const inp = document.getElementById("iin"), err = document.getElementById("iinerr"), btn = document.getElementById("go");
+  // 8 цифр — код учителя: он уходит на портал (/mk/enter), там учитель видит разбор классов; 12 цифр — ИИН ученика
+  const isCode = (v) => v.length === 8 && CFG.portal;
   inp.oninput = () => {
     inp.value = inp.value.replace(/\D/g, "").slice(0, 12);
-    btn.disabled = inp.value.length !== 12;
+    btn.disabled = !(inp.value.length === 12 || isCode(inp.value));
+    btn.textContent = isCode(inp.value) ? u.teacherEnter : u.enter;
     err.textContent = "";
   };
   inp.onkeydown = (e) => { if (e.key === "Enter" && !btn.disabled) btn.click(); };
   btn.onclick = async () => {
     const iin = inp.value;
+    if (isCode(iin)) {
+      const f = Object.assign(document.createElement("form"), { method: "post", action: `${CFG.portal}/mk/enter` });
+      f.append(Object.assign(document.createElement("input"), { type: "hidden", name: "code", value: iin }));
+      document.body.append(f);
+      inp.value = "";
+      return f.submit();
+    }
     if (!iinOk(iin)) { err.textContent = u.errTypo; return; }
     btn.disabled = true; btn.textContent = u.checking;
     try {
