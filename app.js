@@ -16,6 +16,10 @@ let S = load() || fresh();
 if (S.student && S.view === "start") S.view = "menu";
 if (D.renamed?.[S.student]) { S.student = D.renamed[S.student]; persist(); }
 let picked = "";
+// ?p=3 — продолжить с 3-й встречи на другом телефоне: прошлые встречи уже в базе (в другой анкете),
+// эта уходит отдельной строкой с answers._skip, потом их сливает _src/merge_skip.py
+const SKIP_TO = Math.min(Math.max(+new URLSearchParams(location.search).get("p") || 1, 1), D.parts.length);
+const skipped = (pid) => (S.answers._skip || []).includes(pid);
 let shownAt = performance.now();
 
 function uuid() {
@@ -107,7 +111,10 @@ function renderStart() {
   </div>`;
   app.querySelectorAll(".name").forEach((el) => el.onclick = () => { picked = el.dataset.name; render(); });
   setDock(`<button class="btn wide" id="go" ${picked ? "" : "disabled"}>${picked ? "Бастау →" : "Атыңды таңда"}</button>`);
-  on("go", () => go(() => { S = fresh(); S.student = picked; S.view = "menu"; }));
+  on("go", () => go(() => {
+    S = fresh(); S.student = picked; S.view = "menu";
+    if (SKIP_TO > 1) { S.answers._skip = D.parts.slice(0, SKIP_TO - 1).map((p) => p.id); for (const id of S.answers._skip) S.done[id] = true; }
+  }));
 }
 
 function renderMenu() {
@@ -117,10 +124,11 @@ function renderMenu() {
     <p class="lead">${next === -1 ? "Үш кездесу де өтті — рақмет! Нәтижелеріңді қайта қарай аласың." : next === 0 ? "Бірінші кездесуден бастайық." : "Жалғастырайық. Үзіліс жасап алсаң да болады."}</p>
     <div class="parts">${D.parts.map((p, i) => {
       const done = S.done[p.id], open = i <= (next === -1 ? 99 : next), cur = i === S.part && !done && (S.block > 0 || !S.intro);
-      return `<button class="partc ${done ? "done" : ""}" data-p="${i}" ${open ? "" : "disabled"}>
+      const skip = skipped(p.id);
+      return `<button class="partc ${done ? "done" : ""}" data-p="${i}" ${open && !skip ? "" : "disabled"}>
         <span class="pi">${done ? "✅" : open ? p.icon : "🔒"}</span>
         <span class="pt"><b>${esc(p.title)}</b><small>${esc(p.teaser)} · ≈${p.min} мин</small></span>
-        <span class="pa">${done ? "Нәтиже" : cur ? "Жалғастыру" : open ? "Бастау" : ""}</span></button>`;
+        <span class="pa">${skip ? "Өтті" : done ? "Нәтиже" : cur ? "Жалғастыру" : open ? "Бастау" : ""}</span></button>`;
     }).join("")}</div>
     ${saveErr ? `<p class="err">Соңғы жауаптар әлі жіберілмеді — интернетті тексер. Олар осы құрылғыда сақтаулы.</p>` : ""}
     <p class="saved"><button class="link" id="other">Мен ${esc(firstName())} емеспін — басқа оқушы</button></p>
@@ -345,7 +353,7 @@ function resultHtml(pi, sc) {
     html = `<div class="res-top"><div class="big">🫶</div><h2>Саған хат</h2><p>Үш кездесуден кейін</p></div>
       <div class="card letter">
         <p>${esc(firstName())}, рақмет саған — шынын жазғаның үшін. Бұл оңай емес.</p>
-        <p>Мен сенен мынаны көрдім: сенің бағытың — <b>${esc(K.name)}</b>${st.length ? `, ал күшің — <b>${st.map((o) => esc(o.t.split(" — ")[0].toLowerCase())).join(", ")}</b>` : ""}.${vals.length ? ` Сен үшін <b>${vals.map((v) => esc(v.toLowerCase())).join("</b> және <b>")}</b> маңызды — бұл сенің ішкі компасың.` : ""}</p>
+        ${skipped("p1") ? "" : `<p>Мен сенен мынаны көрдім: сенің бағытың — <b>${esc(K.name)}</b>${st.length ? `, ал күшің — <b>${st.map((o) => esc(o.t.split(" — ")[0].toLowerCase())).join(", ")}</b>` : ""}.${vals.length ? ` Сен үшін <b>${vals.map((v) => esc(v.toLowerCase())).join("</b> және <b>")}</b> маңызды — бұл сенің ішкі компасың.` : ""}</p>`}
         <p>Әр адамның қиын күндері болады. Егер бірдеңе мазаласа — үлкен не кішкентай болсын — кез келген уақытта келіп сөйлесе аласың. Мен тыңдауға дайынмын.</p>
         <p class="sign">— Сынып жетекшің</p>
       </div>`;
@@ -371,7 +379,7 @@ function renderAll() {
   app.innerHTML = `<div class="screen">
     <p class="eyebrow" style="margin-top:14px">Үш кездесу де өтті ✓</p>
     <h1>${esc(firstName())}, сенің нәтижелерің</h1>
-    ${D.parts.map((p, i) => `<h2 class="sec">${p.icon} ${esc(p.title)}</h2>${resultHtml(i, sc)}`).join("")}
+    ${D.parts.map((p, i) => skipped(p.id) ? "" : `<h2 class="sec">${p.icon} ${esc(p.title)}</h2>${resultHtml(i, sc)}`).join("")}
     <p class="saved">Бұл — бағыт қана, үкім емес.</p></div>`;
   setDock(`<button class="btn ghost" id="menu">☰ Мәзір</button><button class="btn ghost" id="other">Келесі оқушы</button>`);
   on("menu", () => go(() => { S.view = "menu"; }));
