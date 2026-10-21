@@ -4,7 +4,7 @@
 // Ответы копятся в localStorage и уходят в базу (mk_save_iin) после каждого блока; анкету можно продолжить
 // с любого телефона. Сам ИИН на телефоне не хранится — только токен.
 // Тексты на двух языках: вопросы и результаты — data.js (MK_ALL.kk / MK_ALL.ru), надписи интерфейса — UI ниже.
-import { score } from "./scoring.js";
+import { score } from "./scoring.js?v=ca496dbc";
 
 const ALL = window.MK_ALL;
 const CFG = window.MK_CONFIG || {};
