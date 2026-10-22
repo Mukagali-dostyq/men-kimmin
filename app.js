@@ -4,7 +4,7 @@
 // Ответы копятся в localStorage и уходят в базу (mk_save_iin) после каждого блока; анкету можно продолжить
 // с любого телефона. Сам ИИН на телефоне не хранится — только токен.
 // Тексты на двух языках: вопросы и результаты — data.js (MK_ALL.kk / MK_ALL.ru), надписи интерфейса — UI ниже.
-import { score } from "./scoring.js?v=2755f1a8";
+import { score } from "./scoring.js?v=e83f4a55";
 
 const ALL = window.MK_ALL;
 const CFG = window.MK_CONFIG || {};
@@ -98,14 +98,16 @@ function setLang(l) {
 setLang(LANG);
 
 const fresh = () => ({ token: "", student: "", cls: "", answers: { _t: {} }, part: -1, block: 0, q: 0, intro: true, done: {}, view: "start", seconds: 0 });
-let S = load() || fresh();
+// ?demo=1 — показ на презентации: сразу демо-ученик, ничего не пишется ни в базу, ни в память телефона
+const URL_DEMO = new URLSearchParams(location.search).has("demo");
+let S = URL_DEMO ? { ...fresh(), student: "Демо", demo: true, view: "menu" } : load() || fresh();
 // старая анкета «по выбору имени» (до входа по ЖСН) остаётся на телефоне: после входа того же ученика её ответы дольются
 if (!S.token && !S.demo) S.view = "start";
 const skipped = (pid) => (S.answers._skip || []).includes(pid);
 let shownAt = performance.now();
 
 function load() { try { return JSON.parse(localStorage.getItem(STORE)); } catch { return null; } }
-function persist() { try { localStorage.setItem(STORE, JSON.stringify(S)); } catch { /* приватный режим */ } }
+function persist() { if (URL_DEMO) return; try { localStorage.setItem(STORE, JSON.stringify(S)); } catch { /* приватный режим */ } }
 
 let tick = Date.now();
 setInterval(() => {
@@ -566,6 +568,16 @@ function renderAll() {
   on("menu", () => go(() => { S.view = "menu"; }));
   on("other", () => go(() => { S = fresh(); }));
   onLang();
+}
+
+// Демо внутри презентации: PageDown/PageUp/Esc (кликер) передаём слайдам
+if (URL_DEMO && window.parent !== window) {
+  document.addEventListener("keydown", (e) => {
+    if (["PageDown", "PageUp", "Escape"].includes(e.key) && e.target.tagName !== "TEXTAREA" && e.target.tagName !== "INPUT") {
+      e.preventDefault();
+      window.parent.postMessage({ pitchKey: e.key }, "*");
+    }
+  });
 }
 
 addEventListener("pagehide", () => { if (S.token && S.view === "test") save(); });
